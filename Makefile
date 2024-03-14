@@ -1,12 +1,7 @@
-# contrib/remote_exec/Makefile
-
 MODULES = pg_remote_exec
 
 EXTENSION = pg_remote_exec
 DATA = pg_remote_exec--1.0.sql
-PGFILEDESC = "pg_remote_exec - remote execution"
-
-REGRESS = pg_remote_exec
 
 ifdef USE_PGXS
 PG_CONFIG = pg_config
