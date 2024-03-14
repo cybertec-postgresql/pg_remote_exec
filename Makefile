@@ -1,4 +1,5 @@
 MODULES = pg_remote_exec
+PG_CFLAGS = -Wformat
 
 EXTENSION = pg_remote_exec
 DATA = pg_remote_exec--1.0.sql
