@@ -3,4 +3,3 @@ default_version = '1.0'
 module_pathname = '$libdir/pg_remote_exec'
 relocatable = false
 schema = pg_catalog
-

@@ -1,21 +1,31 @@
 #include "postgres.h"
 
 #include "funcapi.h"
-#include "access/hash.h"
 #include "utils/builtins.h"
 
-#ifdef PG_MODULE_MAGIC
 PG_MODULE_MAGIC;
+
+#if PG_VERSION_NUM < 120000
+#error "Unsupported PostgreSQL Version"
 #endif
 
-/* execute some generic command and return status */
+typedef struct OutputContext
+{
+	FILE   *fp;
+	char   *line;
+	size_t  len;
+} OutputContext;
+
+/* Execute a given shell command and return status. */
 PG_FUNCTION_INFO_V1(pg_remote_exec);
+/* Execute a given shell command and return its stdout as a string. */
+PG_FUNCTION_INFO_V1(pg_remote_exec_fetch);
 
 Datum
 pg_remote_exec(PG_FUNCTION_ARGS)
 {
-	int	result;
-	char	*exec_string;
+	int   result;
+	char *exec_string;
 
 	exec_string = text_to_cstring(PG_GETARG_TEXT_PP(0));
 	result = system(exec_string);
@@ -24,32 +34,21 @@ pg_remote_exec(PG_FUNCTION_ARGS)
 	PG_RETURN_INT32(result);
 }
 
-
-/* execute a function and get output as a string */
-PG_FUNCTION_INFO_V1(pg_remote_exec_fetch);
-
-typedef struct OutputContext
-{
-	FILE		*fp;
-	char		*line;
-	size_t 		len;
-} OutputContext;
-
 Datum
 pg_remote_exec_fetch(PG_FUNCTION_ARGS)
 {
 	FuncCallContext *funcctx;
-	OutputContext		*ocxt;
-	ssize_t		read;
-	text		*result;
-	bool		ignore_errors;
+	OutputContext   *ocxt;
+	ssize_t          read;
+	text            *result;
+	bool             ignore_errors;
 
 	ignore_errors = PG_GETARG_BOOL(1);
 
 	if (SRF_IS_FIRSTCALL())
 	{
-		char		*exec_string;
-		MemoryContext oldcontext;
+		char          *exec_string;
+		MemoryContext  oldcontext;
 
 		/*
 		 * This chunk will eventually be freed by PG executor. I'm not sure if
@@ -82,7 +81,9 @@ pg_remote_exec_fetch(PG_FUNCTION_ARGS)
 			 * When error occurs, FMGR should free the memory allocated in the
 			 * current transaction.
 			 */
-			elog(ERROR, "Failed to run command");
+			ereport(ERROR,
+					errcode(ERRCODE_SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION),
+					errmsg("Failed to run command"));
 		}
 
 		/* Make the output context available for the next calls. */
@@ -101,7 +102,10 @@ pg_remote_exec_fetch(PG_FUNCTION_ARGS)
 	read = getline(&ocxt->line, &ocxt->len, ocxt->fp);
 	/* This is serious enough to bring down the whole PG backend. */
 	if (errno == EINVAL)
-		elog(FATAL, "Failed to read command output.");
+	{
+		ereport(FATAL, errcode(ERRCODE_SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION),
+				errmsg("Failed to read command output."));
+	}
 
 	if (read == -1)
 	{
@@ -117,7 +121,11 @@ pg_remote_exec_fetch(PG_FUNCTION_ARGS)
 
 		/* Another resource not controlled by PG. */
 		if (pclose(ocxt->fp) != 0 && !ignore_errors)
-			elog(ERROR, "Failed to run command");
+		{
+			ereport(ERROR,
+					errcode(ERRCODE_SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION),
+					errmsg("Failed to read command output."));
+		}
 
 		SRF_RETURN_DONE(funcctx);
 	}
@@ -128,6 +136,3 @@ pg_remote_exec_fetch(PG_FUNCTION_ARGS)
 
 	SRF_RETURN_NEXT(funcctx, PointerGetDatum(result));
 }
-
-
-
