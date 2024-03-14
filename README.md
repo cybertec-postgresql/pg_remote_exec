@@ -25,13 +25,13 @@ CREATE EXTENSION pg_remote_exec;
 # USAGE
 
 ```
-postgres=# select pg_remote_exec('date');
+postgres=# SELECT pg_remote_exec('date');
  pg_remote_exec
 ----------------
               0
 (1 row)
 
-postgres=# select pg_remote_exec_fetch('date', 't');
+postgres=# SELECT pg_remote_exec_fetch('date', 't');
      pg_remote_exec_fetch
 ───────────────────────────────
  Fri Aug  5 17:41:07 EEST 2016
