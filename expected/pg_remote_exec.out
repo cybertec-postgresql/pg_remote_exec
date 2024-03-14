@@ -1,0 +1,15 @@
+CREATE EXTENSION IF NOT EXISTS pg_remote_exec;
+select pg_remote_exec('date');
+ pg_remote_exec 
+----------------
+              0
+(1 row)
+
+select pg_remote_exec_fetch('echo "test"', 't');
+ pg_remote_exec_fetch 
+----------------------
+ test
+(1 row)
+
+select pg_remote_exec_fetch('this_cmd_does_not_exist', 'f');
+ERROR:  Failed to read command output.
