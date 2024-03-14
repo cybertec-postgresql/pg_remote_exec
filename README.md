@@ -8,7 +8,7 @@ Install PostgreSQL before proceeding. Make sure to have `pg_config` binary,
 these are typically included in `-dev` and `-devel` packages.
 
 ```bash
-git clone git@github.com:cybertec-postgresql/pg_remote_exec.git
+git clone https://github.com/cybertec-postgresql/pg_remote_exec.git
 cd pg_remote_exec
 make
 sudo make install
