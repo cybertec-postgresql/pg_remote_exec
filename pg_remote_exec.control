@@ -1,5 +1,5 @@
 comment = 'remote shell execution for non-superusers'
-default_version = '1.0'
+default_version = '1.1'
 module_pathname = '$libdir/pg_remote_exec'
 relocatable = false
 schema = pg_catalog

@@ -10,3 +10,7 @@ CREATE FUNCTION pg_remote_exec_fetch(text, bool)
 RETURNS SETOF text
 AS 'MODULE_PATHNAME', 'pg_remote_exec_fetch'
 LANGUAGE C VOLATILE STRICT;
+
+-- We do not want anyone but superuser to be able to invoke those.
+REVOKE ALL ON FUNCTION pg_remote_exec(text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION pg_remote_exec_fetch(text, bool) FROM PUBLIC;
