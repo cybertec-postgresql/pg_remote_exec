@@ -2,8 +2,7 @@ MODULE_big = pg_remote_exec
 OBJS = pg_remote_exec.o
 
 EXTENSION = pg_remote_exec
-DATA = pg_remote_exec--1.1.sql \
-       pg_remote_exec--1.0--1.1.sql
+DATA = pg_remote_exec--1.0.sql
 REGRESS = pg_remote_exec
 DOCS = pg_remote_exec.md
 
