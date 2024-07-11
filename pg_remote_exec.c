@@ -40,7 +40,10 @@ check_privileges(void)
 				))
 		ereport(ERROR,
 				errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
-				errmsg("no permission to execute this function"));
+				errmsg("insufficient privileges"),
+				errhint("Only superusers"
+					" and members of pg_execute_server_program"
+					" may execute this function."));
 }
 
 Datum
