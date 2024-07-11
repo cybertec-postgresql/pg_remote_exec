@@ -1,7 +1,11 @@
 #include "postgres.h"
 
+#include "catalog/pg_authid.h"
 #include "funcapi.h"
+#include "miscadmin.h"
+#include "utils/acl.h"
 #include "utils/builtins.h"
+#include "utils/elog.h"
 
 PG_MODULE_MAGIC;
 
@@ -27,6 +31,11 @@ pg_remote_exec(PG_FUNCTION_ARGS)
 	int   result;
 	char *exec_string;
 
+	if (!has_privs_of_role(GetUserId(), ROLE_PG_EXECUTE_SERVER_PROGRAM))
+		ereport(ERROR,
+				errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
+				errmsg("no permission to execute this function"));
+
 	exec_string = text_to_cstring(PG_GETARG_TEXT_PP(0));
 	result = system(exec_string);
 
@@ -42,6 +51,11 @@ pg_remote_exec_fetch(PG_FUNCTION_ARGS)
 	ssize_t          read;
 	text            *result;
 	bool             ignore_errors;
+
+	if (!has_privs_of_role(GetUserId(), ROLE_PG_EXECUTE_SERVER_PROGRAM))
+		ereport(ERROR,
+				errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
+				errmsg("no permission to execute this function"));
 
 	ignore_errors = PG_GETARG_BOOL(1);
 
