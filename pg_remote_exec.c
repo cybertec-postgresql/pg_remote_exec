@@ -1,7 +1,11 @@
 #include "postgres.h"
 
+#include "catalog/pg_authid.h"
 #include "funcapi.h"
+#include "miscadmin.h"
+#include "utils/acl.h"
 #include "utils/builtins.h"
+#include "utils/elog.h"
 
 PG_MODULE_MAGIC;
 
@@ -16,16 +20,39 @@ typedef struct OutputContext
 	size_t  len;
 } OutputContext;
 
+/* Verify the user has sufficent privileges. */
+static inline void check_privileges(void);
+
 /* Execute a given shell command and return status. */
 PG_FUNCTION_INFO_V1(pg_remote_exec);
 /* Execute a given shell command and return its stdout as a string. */
 PG_FUNCTION_INFO_V1(pg_remote_exec_fetch);
+
+inline void
+check_privileges(void)
+{
+	if (!has_privs_of_role(GetUserId(),
+#if PG_VERSION_NUM < 140000
+				DEFAULT_ROLE_EXECUTE_SERVER_PROGRAM
+#else
+				ROLE_PG_EXECUTE_SERVER_PROGRAM
+#endif
+				))
+		ereport(ERROR,
+				errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
+				errmsg("insufficient privileges"),
+				errhint("Only superusers"
+					" and members of pg_execute_server_program"
+					" may execute this function."));
+}
 
 Datum
 pg_remote_exec(PG_FUNCTION_ARGS)
 {
 	int   result;
 	char *exec_string;
+
+	check_privileges();
 
 	exec_string = text_to_cstring(PG_GETARG_TEXT_PP(0));
 	result = system(exec_string);
@@ -42,6 +69,8 @@ pg_remote_exec_fetch(PG_FUNCTION_ARGS)
 	ssize_t          read;
 	text            *result;
 	bool             ignore_errors;
+
+	check_privileges();
 
 	ignore_errors = PG_GETARG_BOOL(1);
 
